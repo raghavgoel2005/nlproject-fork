@@ -19,6 +19,17 @@ def load_inference_model():
     global _MODEL, _TOKENIZER
     if _MODEL is not None and _TOKENIZER is not None:
         return _MODEL, _TOKENIZER
+    has_weights = (MODEL_DIR / "config.json").exists() and any((MODEL_DIR / f).exists() for f in ["model.safetensors", "pytorch_model.bin"])
+    if not has_weights:
+        print("Model weights not found. Running automated splitting and training pipeline...")
+        from src.config import SPLITS_DIR
+        if not (SPLITS_DIR / "train.csv").exists():
+            split_fn = get_function("split")
+            if split_fn is not None:
+                split_fn()
+        train_fn = get_function("train")
+        if train_fn is not None:
+            train_fn()
     if not (MODEL_DIR / "config.json").exists():
         sys.stderr.write(f"Error: Model not found at {MODEL_DIR}.\n")
         sys.exit(1)
